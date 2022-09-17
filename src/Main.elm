@@ -18,6 +18,7 @@ type alias Model =
     { grid: Grid Cell
     , message: String
     , past: Stack ModelReference
+    , future: Stack ModelReference
     }
 type ModelReference = ModelReference Model
 
@@ -46,20 +47,32 @@ init =
         ]
     , message = ""
     , past = Stack.empty
+    , future = Stack.empty
     }
 
 -- UPDATE
 
-type Msg = Mark Coordinates | Unmark Coordinates | Clear Coordinates | Undo
+type Msg = Mark Coordinates | Unmark Coordinates | Clear Coordinates | Undo | Redo
 
 update : Msg -> Model -> Model
 update msg model = case msg of
-    Mark coordinates -> { model | grid = markCell model.grid coordinates, past = Stack.push model.past (ModelReference model) }
-    Unmark coordinates -> { model | grid = unmarkCell model.grid coordinates, past = Stack.push model.past (ModelReference model)  }
-    Clear coordinates -> { model | grid = clearCell model.grid coordinates, past = Stack.push model.past (ModelReference model)  }
+    Mark coordinates -> updateGrid model (markCell model.grid coordinates)
+    Unmark coordinates -> updateGrid model (unmarkCell model.grid coordinates)
+    Clear coordinates -> updateGrid model (clearCell model.grid coordinates)
     Undo -> case Stack.pop model.past of
-        Just (ModelReference previous) -> previous
+        Just (ModelReference previous) -> { previous | future = Stack.push model.future (ModelReference model) }
         Nothing -> model
+    Redo -> case Stack.pop model.future of
+        Just (ModelReference next) -> next
+        Nothing -> model
+
+updateGrid : Model -> Grid Cell -> Model
+updateGrid model grid =
+    { model
+    | grid = grid
+    , past = Stack.push model.past (ModelReference model)
+    , future = Stack.empty
+    }
 
 markCell : Grid Cell -> Coordinates -> Grid Cell
 markCell grid coordinates = Grid.update (\cell -> { cell | state = Marked }) grid coordinates
@@ -76,6 +89,7 @@ view : Model -> Html Msg
 view model =
     div []
         [ button [onClick Undo] [text "undo"],
+          button [onClick Redo] [text "redo"],
           table [
             style "border-collapse" "collapse",
             style "border" "1px solid black",
