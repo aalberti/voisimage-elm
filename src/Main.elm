@@ -88,20 +88,20 @@ clearCell grid coordinates = Grid.update (\cell -> { cell | state = Unknown }) g
 view : Model -> Html Msg
 view model =
     div []
-        [ button [onClick Undo] [text "undo"],
-          button [onClick Redo] [text "redo"],
-          table [
-            style "border-collapse" "collapse",
-            style "border" "1px solid black",
-            style "-webkit-touch-callout" "none",
-            style "-webkit-user-select" "none",
-            style "-khtml-user-select" "none",
-            style "-moz-user-select" "none",
-            style "-ms-user-select" "none",
-            style "ser-select" "none"
-          ] [
-            tbody [] (Grid.indexedRows renderRow model.grid)
-          ]
+        [ button [onClick Undo] [text "undo"]
+        , button [onClick Redo] [text "redo"]
+        , table
+            [ style "border-collapse" "collapse"
+            , style "border" "1px solid black"
+            , style "-webkit-touch-callout" "none"
+            , style "-webkit-user-select" "none"
+            , style "-khtml-user-select" "none"
+            , style "-moz-user-select" "none"
+            , style "-ms-user-select" "none"
+            , style "ser-select" "none"
+            ]
+            [ tbody [] (Grid.indexedRows renderRow model.grid)
+            ]
         , text model.message
         ]
 
@@ -111,15 +111,17 @@ renderRow y row = tr [] (indexedCells (renderCell y) row)
 renderCell : Int -> Int -> Cell -> Html Msg
 renderCell y x cell  = let additionalStyles = styles cell
     in
-        td ([
-            onClick (clickAction cell {x = x, y = y}),
-            style "border" "1px solid black",
-            style "height" "20px",
-            style "width" "20px",
-            style "text-align" "center",
-            style "padding" "0"
-        ] ++ additionalStyles)
-        [text (cellToString cell) ]
+        td (
+            [ onClick (clickAction cell {x = x, y = y})
+            , style "border" "1px solid black"
+            , style "height" "20px"
+            , style "width" "20px"
+            , style "text-align" "center"
+            , style "padding" "0"
+            ]
+        ++ additionalStyles
+        )
+        [ text (cellToString cell) ]
 
 cellToString: Cell -> String
 cellToString cell = case cell.hint of
