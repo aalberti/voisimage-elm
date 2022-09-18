@@ -52,19 +52,26 @@ init =
 
 -- UPDATE
 
-type Msg = Mark Coordinates | Unmark Coordinates | Clear Coordinates | Undo | Redo
+type Msg = Toggle Coordinates | Undo | Redo
 
 update : Msg -> Model -> Model
 update msg model = case msg of
-    Mark coordinates -> updateGrid model (markCell model.grid coordinates)
-    Unmark coordinates -> updateGrid model (unmarkCell model.grid coordinates)
-    Clear coordinates -> updateGrid model (clearCell model.grid coordinates)
+    Toggle coordinates -> toggle model coordinates
     Undo -> case Stack.pop model.past of
         Just (ModelReference previous) -> { previous | future = Stack.push model.future (ModelReference model) }
         Nothing -> model
     Redo -> case Stack.pop model.future of
         Just (ModelReference next) -> next
         Nothing -> model
+
+toggle : Model -> Coordinates ->Model
+toggle model coordinates = updateGrid model (Grid.update toggleCell model.grid coordinates)
+
+toggleCell: Cell -> Cell
+toggleCell cell = case cell.state of
+    Unknown -> markCell cell
+    Marked -> unmarkCell cell
+    Unmarked -> clearCell cell
 
 updateGrid : Model -> Grid Cell -> Model
 updateGrid model grid =
@@ -74,14 +81,14 @@ updateGrid model grid =
     , future = Stack.empty
     }
 
-markCell : Grid Cell -> Coordinates -> Grid Cell
-markCell grid coordinates = Grid.update (\cell -> { cell | state = Marked }) grid coordinates
+markCell : Cell -> Cell
+markCell cell = { cell | state = Marked }
 
-unmarkCell  : Grid Cell -> Coordinates -> Grid Cell
-unmarkCell grid coordinates = Grid.update (\cell -> { cell | state = Unmarked }) grid coordinates
+unmarkCell  : Cell -> Cell
+unmarkCell cell = { cell | state = Unmarked }
 
-clearCell  : Grid Cell -> Coordinates -> Grid Cell
-clearCell grid coordinates = Grid.update (\cell -> { cell | state = Unknown }) grid coordinates
+clearCell  : Cell -> Cell
+clearCell cell = { cell | state = Unknown }
 
 -- VIEW
 
@@ -112,7 +119,7 @@ renderCell : Int -> Int -> Cell -> Html Msg
 renderCell y x cell  = let additionalStyles = styles cell
     in
         td (
-            [ onClick (clickAction cell {x = x, y = y})
+            [ onClick (clickAction {x = x, y = y})
             , style "border" "1px solid black"
             , style "height" "20px"
             , style "width" "20px"
@@ -136,8 +143,5 @@ styles cell = case cell.state of
     Unmarked -> [ style "background-color" "white" ]
     Unknown -> [ style "background-color" "lightgrey" ]
 
-clickAction : Cell -> Coordinates -> Msg
-clickAction cell coordinates = case cell.state of
-    Unknown -> Mark coordinates
-    Marked -> Unmark coordinates
-    Unmarked -> Clear coordinates
+clickAction : Coordinates -> Msg
+clickAction coordinates = Toggle coordinates

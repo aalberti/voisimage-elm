@@ -1,4 +1,4 @@
-module Grid exposing (Grid, Coordinates, Row, from, indexedRows, indexedCells, update)
+module Grid exposing (Grid, Coordinates, Row, from, get, indexedRows, indexedCells, update)
 
 import Array exposing (Array)
 
