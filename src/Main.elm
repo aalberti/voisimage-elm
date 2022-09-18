@@ -1,11 +1,11 @@
 module Main exposing (..)
 
 import Browser
+import Game exposing (Cell, Game, Hint(..), State(..))
 import Grid exposing (Coordinates, Grid, Row, indexedCells)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Stack exposing (Stack)
 
 -- MAIN
 
@@ -14,41 +14,10 @@ main =
 
 -- MODEL
 
-type alias Model =
-    { grid: Grid Cell
-    , message: String
-    , past: Stack ModelReference
-    , future: Stack ModelReference
-    }
-type ModelReference = ModelReference Model
+type alias Model = Game
 
-type Hint = None | CellsToMark Int
-type State = Marked | Unmarked | Unknown
-type alias Cell =
-    { state: State
-    , hint: Hint
-    }
-
-init : Model
-init =
-    { grid = Grid.from
-        [ [ { state = Unmarked, hint = CellsToMark 0 }
-          , { state = Unknown, hint = None }
-          , { state = Marked, hint = CellsToMark 2 }
-          ]
-        , [ { state = Unmarked, hint = CellsToMark 0 }
-          , { state = Unknown, hint = None }
-          , { state = Marked, hint = CellsToMark 2 }
-          ]
-        , [ { state = Unmarked, hint = CellsToMark 0 }
-          , { state = Unknown, hint = None }
-          , { state = Marked, hint = CellsToMark 2 }
-          ]
-        ]
-    , message = ""
-    , past = Stack.empty
-    , future = Stack.empty
-    }
+init : Game
+init = Game.init
 
 -- UPDATE
 
@@ -56,39 +25,9 @@ type Msg = Toggle Coordinates | Undo | Redo
 
 update : Msg -> Model -> Model
 update msg model = case msg of
-    Toggle coordinates -> toggle model coordinates
-    Undo -> case Stack.pop model.past of
-        Just (ModelReference previous) -> { previous | future = Stack.push model.future (ModelReference model) }
-        Nothing -> model
-    Redo -> case Stack.pop model.future of
-        Just (ModelReference next) -> next
-        Nothing -> model
-
-toggle : Model -> Coordinates ->Model
-toggle model coordinates = updateGrid model (Grid.update toggleCell model.grid coordinates)
-
-toggleCell: Cell -> Cell
-toggleCell cell = case cell.state of
-    Unknown -> markCell cell
-    Marked -> unmarkCell cell
-    Unmarked -> clearCell cell
-
-updateGrid : Model -> Grid Cell -> Model
-updateGrid model grid =
-    { model
-    | grid = grid
-    , past = Stack.push model.past (ModelReference model)
-    , future = Stack.empty
-    }
-
-markCell : Cell -> Cell
-markCell cell = { cell | state = Marked }
-
-unmarkCell  : Cell -> Cell
-unmarkCell cell = { cell | state = Unmarked }
-
-clearCell  : Cell -> Cell
-clearCell cell = { cell | state = Unknown }
+    Toggle coordinates -> Game.toggle model coordinates
+    Undo -> Game.undo model
+    Redo -> Game.redo model
 
 -- VIEW
 
@@ -109,7 +48,6 @@ view model =
             ]
             [ tbody [] (Grid.indexedRows renderRow model.grid)
             ]
-        , text model.message
         ]
 
 renderRow : Int -> Row Cell -> Html Msg
