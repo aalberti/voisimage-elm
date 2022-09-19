@@ -16,23 +16,11 @@ type alias Cell =
     { state: State
     , hint: Hint
     }
+type alias GridSize = { width: Int, height: Int }
 
-init : Game
-init =
-    { grid = Grid.from
-        [ [ { state = Unmarked, hint = CellsToMark 0 }
-          , { state = Unknown, hint = None }
-          , { state = Marked, hint = CellsToMark 2 }
-          ]
-        , [ { state = Unmarked, hint = CellsToMark 0 }
-          , { state = Unknown, hint = None }
-          , { state = Marked, hint = CellsToMark 2 }
-          ]
-        , [ { state = Unmarked, hint = CellsToMark 0 }
-          , { state = Unknown, hint = None }
-          , { state = Marked, hint = CellsToMark 2 }
-          ]
-        ]
+fromSize: GridSize -> Game
+fromSize {width, height} =
+    { grid = Grid.from(List.repeat height (List.repeat width { state = Unknown, hint = None }))
     , toUndo = Stack.empty
     , toRedo = Stack.empty
     }
