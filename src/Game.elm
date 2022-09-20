@@ -38,6 +38,18 @@ redo game = case Stack.pop game.toRedo of
 toggle : Game -> Coordinates -> Game
 toggle game coordinates = updateGrid game (Grid.update toggleCell game.grid coordinates)
 
+updateHint : Game -> Coordinates -> String -> Game
+updateHint game coordinates hint =
+    updateGrid game (Grid.update (updateCellHint hint) game.grid coordinates)
+
+updateCellHint : String -> Cell -> Cell
+updateCellHint hint cell =
+    { cell
+    | hint = String.toInt hint
+        |> Maybe.map CellsToMark
+        |> Maybe.withDefault None
+    }
+
 toggleCell: Cell -> Cell
 toggleCell cell = case cell.state of
     Unknown -> markCell cell
