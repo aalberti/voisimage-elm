@@ -38,6 +38,7 @@ type Msg = WidthUpdated String | HeightUpdated String | Initialize
     | Undo | Redo
     | HintUpdated Coordinates String | Play
     | Toggle Coordinates
+    | Reset
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model = case (model, msg) of
@@ -51,6 +52,7 @@ update msg model = case (model, msg) of
     (Playing game, Toggle coordinates) -> (Playing (Game.toggle game coordinates), Cmd.none)
     (Playing game, Undo) -> (Playing (Game.undo game), Cmd.none)
     (Playing game, Redo) -> (Playing (Game.redo game), Cmd.none)
+    (_, Reset) -> (Initialization { width = Nothing, height = Nothing , message = ""}, Cmd.none)
     _ -> (model, Cmd.none)
 
 orZero : Maybe Int -> Int
@@ -117,6 +119,7 @@ gridView cellRenderer game = div []
         ]
         [ tbody [] (Grid.indexedRowsMap (renderRow cellRenderer) game.grid)
         ]
+    , button [onClick Reset] [text "reset"]
     ]
 
 renderRow : (Int -> Int -> Cell -> Html Msg) -> Int -> Row Cell -> Html Msg
