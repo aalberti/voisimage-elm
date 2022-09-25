@@ -104,11 +104,22 @@ view model = case model of
         , text message
         ]
     Editing game ->  div []
-        [ gridView hintEditor game
+        [ button [ onClick Undo] [text "undo"]
+        , button [ onClick Redo] [text "redo"]
+        , gridView hintEditor game
         , button [ onClick Play ] [ text "play"]
+        , button [ onClick Reset] [text "reset"]
         ]
-    Playing game -> gridView cellView game
-    GameOver game -> gridView cellView game
+    Playing game -> div []
+        [ button [ onClick Undo] [text "undo"]
+        , button [ onClick Redo] [text "redo"]
+        , gridView cellToggler game
+        , button [ onClick Reset] [text "reset"]
+        ]
+    GameOver game -> div []
+        [ text "Congratulations"
+        , gridView cellViewer game
+        ]
 
 sizeToString : (Maybe Int) -> String
 sizeToString size =
@@ -116,9 +127,7 @@ sizeToString size =
 
 gridView: (Int -> Int -> Cell -> Html Msg) -> Game -> Html Msg
 gridView cellRenderer game = div []
-    [ button [onClick Undo] [text "undo"]
-    , button [onClick Redo] [text "redo"]
-    , table
+    [ table
         [ style "border-collapse" "collapse"
         , style "border" "1px solid black"
         , style "-webkit-touch-callout" "none"
@@ -130,14 +139,13 @@ gridView cellRenderer game = div []
         ]
         [ tbody [] (Grid.indexedRowsMap (renderRow cellRenderer) game.grid)
         ]
-    , button [onClick Reset] [text "reset"]
     ]
 
 renderRow : (Int -> Int -> Cell -> Html Msg) -> Int -> Row Cell -> Html Msg
 renderRow cellRenderer y row = tr [] (indexedCellsMap (cellRenderer y) row)
 
-cellView : Int -> Int -> Cell -> Html Msg
-cellView y x cell  =
+cellToggler : Int -> Int -> Cell -> Html Msg
+cellToggler y x cell  =
     td (
         [ onClick (Toggle {x = x, y = y})
         , style "border" "1px solid black"
@@ -149,6 +157,17 @@ cellView y x cell  =
         ++ (styles cell)
     )
     [ text (cellToString cell) ]
+
+cellViewer : Int -> Int -> Cell -> Html Msg
+cellViewer _ _ cell  =
+    td (
+        [ style "height" "10px"
+        , style "width" "10px"
+        , style "padding" "0"
+        ]
+        ++ (styles cell)
+    )
+    [ ]
 
 hintEditor : Int -> Int -> Cell -> Html Msg
 hintEditor y x cell  =
