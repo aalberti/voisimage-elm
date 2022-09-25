@@ -22,7 +22,10 @@ main = Browser.element
 
 -- MODEL
 
-type Model = Initialization { width: Maybe Int, height: Maybe Int, message: String } | Editing Game | Playing Game
+type Model = Initialization { width: Maybe Int, height: Maybe Int, message: String }
+    | Editing Game
+    | Playing Game
+    | GameOver Game
 
 init : Value -> (Model, Cmd Msg)
 init flags =
@@ -49,11 +52,14 @@ update msg model = case (model, msg) of
     (Editing game, Undo) -> (Editing (Game.undo game), Cmd.none)
     (Editing game, Redo) -> (Editing (Game.redo game), Cmd.none)
     (Editing game, Play) -> (Playing (game), Cmd.none)
-    (Playing game, Toggle coordinates) -> (Playing (Game.toggle game coordinates), Cmd.none)
+    (Playing game, Toggle coordinates) -> gameOverOr (Game.toggle game coordinates)
     (Playing game, Undo) -> (Playing (Game.undo game), Cmd.none)
     (Playing game, Redo) -> (Playing (Game.redo game), Cmd.none)
     (_, Reset) -> (Initialization { width = Nothing, height = Nothing , message = ""}, Cmd.none)
     _ -> (model, Cmd.none)
+
+gameOverOr : Game -> (Model, Cmd msg)
+gameOverOr game = (Playing game, Cmd.none)
 
 orZero : Maybe Int -> Int
 orZero maybeInt = Maybe.withDefault 0 maybeInt
@@ -80,6 +86,10 @@ updateWithStorage msg oldModel =
             ( newModel
             , Cmd.batch [ encode game.grid |> setStorage, cmds ]
             )
+        GameOver _ ->
+            ( newModel
+            , Cmd.batch [ resetStorage (), cmds ]
+            )
 
 -- VIEW
 
@@ -98,6 +108,7 @@ view model = case model of
         , button [ onClick Play ] [ text "play"]
         ]
     Playing game -> gridView cellView game
+    GameOver game -> gridView cellView game
 
 sizeToString : (Maybe Int) -> String
 sizeToString size =

@@ -1,4 +1,4 @@
-module Game exposing (..)
+module Game exposing (Cell, Game, Hint(..), State(..), fromSize, updateHint, toggle, undo, redo)
 
 import Grid exposing (Coordinates, Grid)
 import Stack exposing (Stack)
