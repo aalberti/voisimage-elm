@@ -1,0 +1,28 @@
+<html>
+<head>
+  <meta charSet="UTF-8">
+  <title>Main</title>
+  <script src="main.js"></script>
+</head>
+
+<body>
+<div id="myapp"></div>
+<script>
+  var storedData = localStorage.getItem('neighbimage-model');
+  var flags = storedData ? JSON.parse(storedData) : null;
+
+  // Load the Elm app, passing in the stored data.
+  var app = Elm.Main.init({
+    node: document.getElementById('myapp'),
+    flags: flags
+  });
+
+  app.ports.setStorage.subscribe(function(state) {
+    localStorage.setItem('neighbimage-model', JSON.stringify(state));
+  });
+  app.ports.resetStorage.subscribe(function() {
+    localStorage.removeItem('neighbimage-model');
+  });
+</script>
+</body>
+</html>

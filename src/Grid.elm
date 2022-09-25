@@ -1,4 +1,4 @@
-module Grid exposing (Grid, Coordinates, Row, from, get, indexedRows, indexedCells, update)
+module Grid exposing (Grid, Coordinates, Row, from, get, indexedRowsMap, indexedCellsMap, update)
 
 import Array exposing (Array)
 
@@ -12,11 +12,11 @@ type alias Row a = Array a
 from : List (List a) -> Grid a
 from rows = List.map (Array.fromList) rows |> Array.fromList
 
-indexedRows : (Int -> Row a -> b) -> Grid a -> List b
-indexedRows f grid = Array.indexedMap f grid |> Array.toList
+indexedRowsMap : (Int -> Row a -> b) -> Grid a -> List b
+indexedRowsMap f grid = Array.indexedMap f grid |> Array.toList
 
-indexedCells : (Int -> a -> b) -> Row a -> List b
-indexedCells f row = Array.indexedMap f row |> Array.toList
+indexedCellsMap : (Int -> a -> b) -> Row a -> List b
+indexedCellsMap f row = Array.indexedMap f row |> Array.toList
 
 update : (a -> a) -> Grid a -> Coordinates -> Grid a
 update f grid coordinates = get grid coordinates
