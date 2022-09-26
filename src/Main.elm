@@ -59,7 +59,11 @@ update msg model = case (model, msg) of
     _ -> (model, Cmd.none)
 
 gameOverOr : Game -> (Model, Cmd msg)
-gameOverOr game = (Playing game, Cmd.none)
+gameOverOr game =
+    if Game.isOver game then
+        (GameOver game, Cmd.none)
+    else
+        (Playing game, Cmd.none)
 
 orZero : Maybe Int -> Int
 orZero maybeInt = Maybe.withDefault 0 maybeInt

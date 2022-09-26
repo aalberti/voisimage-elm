@@ -1,4 +1,4 @@
-module Grid exposing (Grid, Coordinates, Row, from, get, indexedRowsMap, indexedCellsMap, update)
+module Grid exposing (Grid, Coordinates, Row, from, get, indexedRowsMap, indexedCellsMap, update, count)
 
 import Array exposing (Array)
 
@@ -23,6 +23,16 @@ update f grid coordinates = get grid coordinates
     |> Maybe.map (f)
     |> Maybe.map (set grid coordinates)
     |> Maybe.withDefault grid
+
+count : (a -> Bool) -> Grid a -> Int
+count predicate grid = Array.toList grid
+    |> List.map (countCells predicate)
+    |> List.sum
+
+countCells : (a -> Bool) -> Row a -> Int
+countCells predicate row = Array.toList row
+    |> List.filter predicate
+    |> List.length
 
 rowCell : Int -> Row a -> Maybe a
 rowCell x row = Array.get x row
