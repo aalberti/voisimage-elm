@@ -101,28 +101,29 @@ view : Model -> Html Msg
 view model = case model of
     Initialization { width, height, message } -> div []
         [ text "Width"
-        , input [type_ "number", placeholder "width", value (sizeToString width), onInput WidthUpdated ][]
+        , input [ type_ "number", placeholder "width", value (sizeToString width), onInput WidthUpdated ][]
         , text "Height"
-        , input [type_ "number", placeholder "height", value (sizeToString height), onInput HeightUpdated ][]
-        , button [ onClick Initialize ] [text "Initialize"]
+        , input [ type_ "number", placeholder "height", value (sizeToString height), onInput HeightUpdated ][]
+        , button [ onClick Initialize ] [ text "Initialize" ]
         , text message
         ]
     Editing game ->  div []
-        [ button [ onClick Undo] [text "undo"]
-        , button [ onClick Redo] [text "redo"]
+        [ button [ onClick Undo ] [ text "undo" ]
+        , button [ onClick Redo ] [ text "redo" ]
         , gridView hintEditor game
-        , button [ onClick Play ] [ text "play"]
-        , button [ onClick Reset] [text "reset"]
+        , button [ onClick Play ] [ text "play" ]
+        , button [ onClick Reset ] [ text "reset" ]
         ]
     Playing game -> div []
-        [ button [ onClick Undo] [text "undo"]
-        , button [ onClick Redo] [text "redo"]
+        [ button [ onClick Undo ] [ text "undo" ]
+        , button [ onClick Redo ] [ text "redo" ]
         , gridView cellToggler game
-        , button [ onClick Reset] [text "reset"]
+        , button [ onClick Reset ] [ text "reset" ]
         ]
     GameOver game -> div []
         [ text "Congratulations"
         , gridView cellViewer game
+        , button [ onClick Reset ] [ text "moar" ]
         ]
 
 sizeToString : (Maybe Int) -> String

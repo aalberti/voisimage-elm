@@ -1,4 +1,4 @@
-module Game exposing (Cell, Game, Hint(..), State(..), fromSize, updateHint, toggle, undo, redo, isOver)
+module Game exposing (..)
 
 import Grid exposing (Coordinates, Grid)
 import Stack exposing (Stack)
@@ -58,12 +58,27 @@ toggleCell cell = case cell.state of
 
 isOver : Game -> Bool
 isOver game = case Grid.count isUnknown game.grid of
-    0 -> True
+    0 -> (Grid.indexedCount (isHintUnverified game.grid) game.grid) == 0
     _ -> False
 
 isUnknown : Cell -> Bool
 isUnknown cell = case cell.state of
     Unknown -> True
+    _ -> False
+
+isHintUnverified : Grid Cell -> Coordinates -> Cell -> Bool
+isHintUnverified grid coordinates cell = case cell.hint of
+    None -> False
+    CellsToMark cellsToMark -> (numberOfMarkedNeighbours grid coordinates) /= cellsToMark
+
+numberOfMarkedNeighbours : Grid Cell -> Coordinates -> Int
+numberOfMarkedNeighbours grid coordinates =
+    Grid.neighbours grid coordinates
+        |> Grid.count isCellMarked
+
+isCellMarked : Cell -> Bool
+isCellMarked cell = case cell.state of
+    Marked -> True
     _ -> False
 
 updateGrid : Game -> Grid Cell -> Game
@@ -82,4 +97,3 @@ unmarkCell cell = { cell | state = Unmarked }
 
 clearCell  : Cell -> Cell
 clearCell cell = { cell | state = Unknown }
-

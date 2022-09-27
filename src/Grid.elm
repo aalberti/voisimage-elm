@@ -1,4 +1,4 @@
-module Grid exposing (Grid, Coordinates, Row, from, get, indexedRowsMap, indexedCellsMap, update, count)
+module Grid exposing (..)
 
 import Array exposing (Array)
 
@@ -29,6 +29,19 @@ count predicate grid = Array.toList grid
     |> List.map (countCells predicate)
     |> List.sum
 
+indexedCount : (Coordinates -> a -> Bool) -> Grid a -> Int
+indexedCount predicate grid =
+    Array.indexedMap (indexedCellsCount predicate) grid
+        |> Array.toList
+        |> List.sum
+
+indexedCellsCount : (Coordinates -> a -> Bool) -> Int -> Row a -> Int
+indexedCellsCount predicate x row =
+    Array.indexedMap (\y a -> predicate {x = x, y = y} a) row
+        |> Array.filter (\a -> a)
+        |> Array.toList
+        |> List.length
+
 countCells : (a -> Bool) -> Row a -> Int
 countCells predicate row = Array.toList row
     |> List.filter predicate
@@ -51,3 +64,34 @@ setRowToGrid y grid row = Array.set y row grid
 
 setCellToRow : Int -> a -> Row a -> Row a
 setCellToRow x cell row = Array.set x cell row
+
+neighbours : Grid a -> Coordinates -> Grid a
+neighbours grid coordinates = from
+    (
+        [ line grid coordinates (coordinates.y - 1)
+        , line grid coordinates coordinates.y
+        , line grid coordinates (coordinates.y + 1)
+        ]
+        |> List.filter (\list -> not (List.isEmpty list))
+    )
+
+line : Grid a -> Coordinates -> Int -> List a
+line grid coordinates index =
+    Array.get index grid
+        |> Maybe.withDefault (Array.fromList [])
+        |> subArray (coordinates.x - 1) (coordinates.x + 1)
+        |> Array.toList
+
+subArray : Int -> Int -> Array a -> Array a
+subArray start end array =
+    let
+        s = if start < 0 then
+                0
+            else
+                start
+        e = if end < Array.length array then
+                end
+            else
+                (Array.length array) - 1
+    in
+        Array.slice s (e+1) array
