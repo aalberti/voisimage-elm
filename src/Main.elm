@@ -41,7 +41,8 @@ type Msg = WidthUpdated String | HeightUpdated String | Initialize
     | Undo | Redo
     | HintUpdated Coordinates String | Play
     | Toggle Coordinates
-    | Reset
+    | NewGame
+    | ClearMarks
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model = case (model, msg) of
@@ -55,7 +56,8 @@ update msg model = case (model, msg) of
     (Playing game, Toggle coordinates) -> gameOverOr (Game.toggle game coordinates)
     (Playing game, Undo) -> (Playing (Game.undo game), Cmd.none)
     (Playing game, Redo) -> (Playing (Game.redo game), Cmd.none)
-    (_, Reset) -> (Initialization { width = Nothing, height = Nothing , message = ""}, Cmd.none)
+    (Playing game, ClearMarks) -> (Playing (Game.clearMarks game), Cmd.none)
+    (_, NewGame) -> (Initialization { width = Nothing, height = Nothing , message = ""}, Cmd.none)
     _ -> (model, Cmd.none)
 
 gameOverOr : Game -> (Model, Cmd msg)
@@ -112,18 +114,19 @@ view model = case model of
         , button [ onClick Redo ] [ text "redo" ]
         , gridView hintEditor game
         , button [ onClick Play ] [ text "play" ]
-        , button [ onClick Reset ] [ text "reset" ]
+        , button [ onClick NewGame ] [ text "new game" ]
         ]
     Playing game -> div []
         [ button [ onClick Undo ] [ text "undo" ]
         , button [ onClick Redo ] [ text "redo" ]
         , gridView cellToggler game
-        , button [ onClick Reset ] [ text "reset" ]
+        , button [ onClick NewGame ] [ text "new game" ]
+        , button [ onClick ClearMarks ] [ text "clear" ]
         ]
     GameOver game -> div []
         [ text "Congratulations"
         , gridView cellViewer game
-        , button [ onClick Reset ] [ text "moar" ]
+        , button [ onClick NewGame ] [ text "moar" ]
         ]
 
 sizeToString : (Maybe Int) -> String
@@ -199,7 +202,7 @@ hintEditor y x cell  =
 
 cellToString: Cell -> String
 cellToString cell = case cell.hint of
-    None -> ""
+    NoHint -> ""
     CellsToMark number -> String.fromInt number
 
 styles: Cell -> List (Attribute msg)

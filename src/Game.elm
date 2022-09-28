@@ -10,7 +10,7 @@ type alias Game =
     }
 type GameRef = GameRef Game
 
-type Hint = None | CellsToMark Int
+type Hint = NoHint | CellsToMark Int
 type State = Marked | Unmarked | Unknown
 type alias Cell =
     { state: State
@@ -20,7 +20,7 @@ type alias GridSize = { width: Int, height: Int }
 
 fromSize: GridSize -> Game
 fromSize {width, height} =
-    { grid = Grid.from(List.repeat height (List.repeat width { state = Unknown, hint = None }))
+    { grid = Grid.from(List.repeat height (List.repeat width { state = Unknown, hint = NoHint }))
     , toUndo = Stack.empty
     , toRedo = Stack.empty
     }
@@ -47,7 +47,7 @@ updateCellHint hint cell =
     { cell
     | hint = String.toInt hint
         |> Maybe.map CellsToMark
-        |> Maybe.withDefault None
+        |> Maybe.withDefault NoHint
     }
 
 toggleCell: Cell -> Cell
@@ -68,7 +68,7 @@ isUnknown cell = case cell.state of
 
 isHintUnverified : Grid Cell -> Coordinates -> Cell -> Bool
 isHintUnverified grid coordinates cell = case cell.hint of
-    None -> False
+    NoHint -> False
     CellsToMark cellsToMark -> (numberOfMarkedNeighbours grid coordinates) /= cellsToMark
 
 numberOfMarkedNeighbours : Grid Cell -> Coordinates -> Int
@@ -95,5 +95,16 @@ markCell cell = { cell | state = Marked }
 unmarkCell  : Cell -> Cell
 unmarkCell cell = { cell | state = Unmarked }
 
-clearCell  : Cell -> Cell
+clearCell : Cell -> Cell
 clearCell cell = { cell | state = Unknown }
+
+clearMarks : Game -> Game
+clearMarks game =
+    { game
+    | grid = Grid.replaceAll clearMark game.grid
+    , toUndo = Stack.push game.toUndo (GameRef game)
+    , toRedo = Stack.empty
+    }
+
+clearMark : Cell -> Cell
+clearMark cell = { cell | state = Unknown }

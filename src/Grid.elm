@@ -95,3 +95,6 @@ subArray start end array =
                 (Array.length array) - 1
     in
         Array.slice s (e+1) array
+
+replaceAll : (a -> a) -> Grid a -> Grid a
+replaceAll map grid = Array.map (\row -> Array.map map row) grid

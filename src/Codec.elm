@@ -26,7 +26,7 @@ encodeState s = case s of
 
 encodeHint : Hint -> Encode.Value
 encodeHint h = case h of
-    None -> Encode.string ""
+    NoHint -> Encode.string ""
     CellsToMark number -> String.fromInt number |> Encode.string
 
 decode : Encode.Value -> Result Error (Grid Cell)
@@ -59,5 +59,5 @@ hint = Decode.string |> Decode.andThen hintType
 
 hintType: String -> Decode.Decoder Hint
 hintType t = case t of
-    "" -> Decode.succeed None
-    _ -> Decode.succeed (String.toInt t |> Maybe.map CellsToMark |> Maybe.withDefault None)
+    "" -> Decode.succeed NoHint
+    _ -> Decode.succeed (String.toInt t |> Maybe.map CellsToMark |> Maybe.withDefault NoHint)
