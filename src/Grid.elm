@@ -36,8 +36,8 @@ indexedCount predicate grid =
         |> List.sum
 
 indexedCellsCount : (Coordinates -> a -> Bool) -> Int -> Row a -> Int
-indexedCellsCount predicate x row =
-    Array.indexedMap (\y a -> predicate {x = x, y = y} a) row
+indexedCellsCount predicate y row =
+    Array.indexedMap (\x a -> predicate {x = x, y = y} a) row
         |> Array.filter (\a -> a)
         |> Array.toList
         |> List.length
