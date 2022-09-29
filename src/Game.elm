@@ -12,15 +12,17 @@ type GameRef = GameRef Game
 
 type Hint = NoHint | CellsToMark Int
 type State = Marked | Unmarked | Unknown
+type Help = NoHelp | Error
 type alias Cell =
     { state: State
     , hint: Hint
+    , help: Help
     }
 type alias GridSize = { width: Int, height: Int }
 
 fromSize: GridSize -> Game
 fromSize {width, height} =
-    { grid = Grid.from(List.repeat height (List.repeat width { state = Unknown, hint = NoHint }))
+    { grid = Grid.from(List.repeat height (List.repeat width { state = Unknown, hint = NoHint, help = NoHelp }))
     , toUndo = Stack.empty
     , toRedo = Stack.empty
     }
@@ -37,6 +39,7 @@ redo game = case Stack.pop game.toRedo of
 
 toggle : Game -> Coordinates -> Game
 toggle game coordinates = updateGrid game (Grid.update toggleCell game.grid coordinates)
+    |> clearHelp
 
 updateHint : Game -> Coordinates -> String -> Game
 updateHint game coordinates hint =
@@ -108,3 +111,32 @@ clearMarks game =
 
 clearMark : Cell -> Cell
 clearMark cell = { cell | state = Unknown }
+
+setHelp : Game -> Game
+setHelp game =
+    { game
+    | grid = Grid.indexedReplaceAll (setCellHelp game.grid) game.grid
+    , toUndo = Stack.push game.toUndo (GameRef game)
+    , toRedo = Stack.empty
+    }
+
+setCellHelp : Grid Cell -> Coordinates -> Cell -> Cell
+setCellHelp grid coordinates cell = case cell.hint of
+    NoHint -> { cell | help = NoHelp }
+    CellsToMark cellsToMark ->
+        if isInError grid coordinates cellsToMark then
+            { cell | help = Error }
+        else
+            { cell | help = NoHelp }
+
+isInError : Grid Cell -> Coordinates -> Int -> Bool
+isInError grid coordinates cellsToMark =
+    Grid.count isUnknown (Grid.neighbours grid coordinates) == 0 && cellsToMark /= numberOfMarkedNeighbours grid coordinates
+
+clearHelp : Game -> Game
+clearHelp game =
+    { game
+    | grid = Grid.replaceAll (\c -> {c|help = NoHelp}) game.grid
+    , toUndo = Stack.push game.toUndo (GameRef game)
+    , toRedo = Stack.empty
+    }

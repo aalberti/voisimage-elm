@@ -1,7 +1,7 @@
 module Codec exposing (..)
 
 import Array
-import Game exposing (Cell, Hint(..), State(..))
+import Game exposing (Cell, Help(..), Hint(..), State(..))
 import Grid exposing (Grid, Row)
 import Json.Decode as Decode exposing (Error)
 import Json.Encode as Encode
@@ -16,6 +16,7 @@ encodeCell : Cell -> Encode.Value
 encodeCell c = Encode.object
     [ ("state", encodeState c.state )
     , ("hint", encodeHint c.hint)
+    , ("help", Encode.string "foo")
     ]
 
 encodeState : State -> Encode.Value
@@ -41,9 +42,10 @@ row : Decode.Decoder (List Cell)
 row = Decode.list cell
 
 cell : Decode.Decoder Cell
-cell = Decode.map2 Cell
+cell = Decode.map3 Cell
     (Decode.field "state" state)
     (Decode.field "hint" hint)
+    (Decode.field "help" (Decode.succeed NoHelp))
 
 state: Decode.Decoder State
 state = Decode.string |> Decode.andThen stateType

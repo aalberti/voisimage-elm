@@ -43,6 +43,7 @@ type Msg = WidthUpdated String | HeightUpdated String | Initialize
     | Toggle Coordinates
     | NewGame
     | ClearMarks
+    | ShowHelp
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model = case (model, msg) of
@@ -57,6 +58,7 @@ update msg model = case (model, msg) of
     (Playing game, Undo) -> (Playing (Game.undo game), Cmd.none)
     (Playing game, Redo) -> (Playing (Game.redo game), Cmd.none)
     (Playing game, ClearMarks) -> (Playing (Game.clearMarks game), Cmd.none)
+    (Playing game, ShowHelp) -> (Playing (Game.setHelp game), Cmd.none)
     (_, NewGame) -> (Initialization { width = Nothing, height = Nothing , message = ""}, Cmd.none)
     _ -> (model, Cmd.none)
 
@@ -122,6 +124,7 @@ view model = case model of
         , gridView cellToggler game
         , button [ onClick NewGame ] [ text "new game" ]
         , button [ onClick ClearMarks ] [ text "clear" ]
+        , button [ onClick ShowHelp ] [ text "help" ]
         ]
     GameOver game -> div []
         [ text "Congratulations"
@@ -206,9 +209,14 @@ cellToString cell = case cell.hint of
     CellsToMark number -> String.fromInt number
 
 styles: Cell -> List (Attribute msg)
-styles cell = case cell.state of
-    Marked -> [ style "background-color" "black"
-              , style "color" "white"
-              ]
-    Unmarked -> [ style "background-color" "white" ]
-    Unknown -> [ style "background-color" "lightgrey" ]
+styles cell =
+    ( case cell.state of
+        Marked -> [ style "background-color" "black"
+                  , style "color" "white"
+                  ]
+        Unmarked -> [ style "background-color" "white" ]
+        Unknown -> [ style "background-color" "lightgrey" ]
+    ) ++
+    case cell.help of
+        Game.Error -> [ style "border" "solid 2px red" ]
+        _ -> []

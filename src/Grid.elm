@@ -98,3 +98,9 @@ subArray start end array =
 
 replaceAll : (a -> a) -> Grid a -> Grid a
 replaceAll map grid = Array.map (\row -> Array.map map row) grid
+
+indexedReplaceAll : (Coordinates -> a -> a) -> Grid a -> Grid a
+indexedReplaceAll cellMap grid = Array.indexedMap (rowIndexReplaceAll cellMap) grid
+
+rowIndexReplaceAll : (Coordinates -> a -> a) -> Int -> Row a -> Row a
+rowIndexReplaceAll cellMap y row = Array.indexedMap (\x cell -> cellMap {x=x,y=y} cell) row
