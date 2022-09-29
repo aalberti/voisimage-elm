@@ -38,51 +38,66 @@ redo game = case Stack.pop game.toRedo of
     Nothing -> game
 
 toggle : Game -> Coordinates -> Game
-toggle game coordinates = updateGrid game (Grid.update toggleCell game.grid coordinates)
-    |> clearHelp
+toggle game coordinates =
+    let
+        markCell : Cell -> Cell
+        markCell cell = { cell | state = Marked }
+
+        unmarkCell  : Cell -> Cell
+        unmarkCell cell = { cell | state = Unmarked }
+
+        clearCell : Cell -> Cell
+        clearCell cell = { cell | state = Unknown }
+
+        toggleCell: Cell -> Cell
+        toggleCell cell = case cell.state of
+            Unknown -> markCell cell
+            Marked -> unmarkCell cell
+            Unmarked -> clearCell cell
+    in
+        updateGrid game (Grid.update toggleCell game.grid coordinates)
+            |> clearHelp
 
 updateHint : Game -> Coordinates -> String -> Game
 updateHint game coordinates hint =
-    updateGrid game (Grid.update (updateCellHint hint) game.grid coordinates)
-
-updateCellHint : String -> Cell -> Cell
-updateCellHint hint cell =
-    { cell
-    | hint = String.toInt hint
-        |> Maybe.map CellsToMark
-        |> Maybe.withDefault NoHint
-    }
-
-toggleCell: Cell -> Cell
-toggleCell cell = case cell.state of
-    Unknown -> markCell cell
-    Marked -> unmarkCell cell
-    Unmarked -> clearCell cell
+    let
+        updateCellHint : String -> Cell -> Cell
+        updateCellHint h cell =
+            { cell
+            | hint = String.toInt h
+                |> Maybe.map CellsToMark
+                |> Maybe.withDefault NoHint
+            }
+    in
+        updateGrid game (Grid.update (updateCellHint hint) game.grid coordinates)
 
 isOver : Game -> Bool
-isOver game = case Grid.count isUnknown game.grid of
-    0 -> (Grid.indexedCount (isHintUnverified game.grid) game.grid) == 0
-    _ -> False
+isOver game =
+    let
+        isHintUnverified : Grid Cell -> Coordinates -> Cell -> Bool
+        isHintUnverified grid coordinates cell = case cell.hint of
+            NoHint -> False
+            CellsToMark cellsToMark -> (numberOfMarkedNeighbours grid coordinates) /= cellsToMark
+    in
+        case Grid.count isUnknown game.grid of
+            0 -> (Grid.indexedCount (isHintUnverified game.grid) game.grid) == 0
+            _ -> False
 
 isUnknown : Cell -> Bool
 isUnknown cell = case cell.state of
     Unknown -> True
     _ -> False
 
-isHintUnverified : Grid Cell -> Coordinates -> Cell -> Bool
-isHintUnverified grid coordinates cell = case cell.hint of
-    NoHint -> False
-    CellsToMark cellsToMark -> (numberOfMarkedNeighbours grid coordinates) /= cellsToMark
-
 numberOfMarkedNeighbours : Grid Cell -> Coordinates -> Int
 numberOfMarkedNeighbours grid coordinates =
-    Grid.neighbours grid coordinates
-        |> Grid.count isCellMarked
-
-isCellMarked : Cell -> Bool
-isCellMarked cell = case cell.state of
-    Marked -> True
-    _ -> False
+    let
+        isCellMarked : Cell -> Bool
+        isCellMarked cell = case cell.state of
+            Marked -> True
+            _ -> False
+    in
+        Grid.neighbours grid coordinates
+            |> Grid.count isCellMarked
 
 updateGrid : Game -> Grid Cell -> Game
 updateGrid game grid =
@@ -92,46 +107,39 @@ updateGrid game grid =
     , toRedo = Stack.empty
     }
 
-markCell : Cell -> Cell
-markCell cell = { cell | state = Marked }
-
-unmarkCell  : Cell -> Cell
-unmarkCell cell = { cell | state = Unmarked }
-
-clearCell : Cell -> Cell
-clearCell cell = { cell | state = Unknown }
-
 clearMarks : Game -> Game
 clearMarks game =
-    { game
-    | grid = Grid.replaceAll clearMark game.grid
-    , toUndo = Stack.push game.toUndo (GameRef game)
-    , toRedo = Stack.empty
-    }
-
-clearMark : Cell -> Cell
-clearMark cell = { cell | state = Unknown }
+    let
+        clearMark : Cell -> Cell
+        clearMark cell = { cell | state = Unknown }
+    in
+        { game
+        | grid = Grid.replaceAll clearMark game.grid
+        , toUndo = Stack.push game.toUndo (GameRef game)
+        , toRedo = Stack.empty
+        }
 
 setHelp : Game -> Game
 setHelp game =
-    { game
-    | grid = Grid.indexedReplaceAll (setCellHelp game.grid) game.grid
-    , toUndo = Stack.push game.toUndo (GameRef game)
-    , toRedo = Stack.empty
-    }
+    let
+        isInError : Grid Cell -> Coordinates -> Int -> Bool
+        isInError grid coordinates cellsToMark =
+            Grid.count isUnknown (Grid.neighbours grid coordinates) == 0 && cellsToMark /= numberOfMarkedNeighbours grid coordinates
 
-setCellHelp : Grid Cell -> Coordinates -> Cell -> Cell
-setCellHelp grid coordinates cell = case cell.hint of
-    NoHint -> { cell | help = NoHelp }
-    CellsToMark cellsToMark ->
-        if isInError grid coordinates cellsToMark then
-            { cell | help = Error }
-        else
-            { cell | help = NoHelp }
-
-isInError : Grid Cell -> Coordinates -> Int -> Bool
-isInError grid coordinates cellsToMark =
-    Grid.count isUnknown (Grid.neighbours grid coordinates) == 0 && cellsToMark /= numberOfMarkedNeighbours grid coordinates
+        setCellHelp : Grid Cell -> Coordinates -> Cell -> Cell
+        setCellHelp grid coordinates cell = case cell.hint of
+            NoHint -> { cell | help = NoHelp }
+            CellsToMark cellsToMark ->
+                if isInError grid coordinates cellsToMark then
+                    { cell | help = Error }
+                else
+                    { cell | help = NoHelp }
+    in
+        { game
+        | grid = Grid.indexedReplaceAll (setCellHelp game.grid) game.grid
+        , toUndo = Stack.push game.toUndo (GameRef game)
+        , toRedo = Stack.empty
+        }
 
 clearHelp : Game -> Game
 clearHelp game =
