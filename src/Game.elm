@@ -99,6 +99,17 @@ numberOfMarkedNeighbours grid coordinates =
         Grid.neighbours grid coordinates
             |> Grid.count isCellMarked
 
+numberOfUnmarkedNeighbours : Grid Cell -> Coordinates -> Int
+numberOfUnmarkedNeighbours grid coordinates =
+    let
+        isCellUnmarked : Cell -> Bool
+        isCellUnmarked cell = case cell.state of
+            Unmarked -> True
+            _ -> False
+    in
+        Grid.neighbours grid coordinates
+            |> Grid.count isCellUnmarked
+
 updateGrid : Game -> Grid Cell -> Game
 updateGrid game grid =
     { game
@@ -124,7 +135,8 @@ setHelp game =
     let
         isInError : Grid Cell -> Coordinates -> Int -> Bool
         isInError grid coordinates cellsToMark =
-            Grid.count isUnknown (Grid.neighbours grid coordinates) == 0 && cellsToMark /= numberOfMarkedNeighbours grid coordinates
+            cellsToMark < numberOfMarkedNeighbours grid coordinates
+            || cellsToMark > (Grid.neighbours grid coordinates |> Grid.count (\_ -> True)) - numberOfUnmarkedNeighbours grid coordinates
 
         setCellHelp : Grid Cell -> Coordinates -> Cell -> Cell
         setCellHelp grid coordinates cell = case cell.hint of
