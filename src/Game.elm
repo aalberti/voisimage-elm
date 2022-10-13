@@ -122,7 +122,7 @@ clearMarks : Game -> Game
 clearMarks game =
     let
         clearMark : Cell -> Cell
-        clearMark cell = { cell | state = Unknown }
+        clearMark cell = { cell | state = Unknown, help = NoHelp }
     in
         { game
         | grid = Grid.replaceAll clearMark game.grid
