@@ -2,7 +2,7 @@ port module Main exposing (..)
 
 import Browser
 import Codec exposing (decode, encode)
-import Game exposing (Cell, Game, Hint(..), State(..))
+import Game exposing (Cell, Game, Hint(..), State(..), ToggleMode(..))
 import Grid exposing (Coordinates, Grid, Row, indexedCellsMap)
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -30,7 +30,7 @@ type Model = Initialization { width: Maybe Int, height: Maybe Int, message: Stri
 init : Value -> (Model, Cmd Msg)
 init flags =
     ( case (decode flags) of
-        Ok g -> Editing {grid = g, toUndo = Stack.empty, toRedo = Stack.empty}
+        Ok g -> Editing {grid = g, toggleMode = Toggling, toUndo = Stack.empty, toRedo = Stack.empty}
         Err error -> (Initialization { width = Nothing, height = Nothing, message = Decode.errorToString error })
     , Cmd.none
     )
@@ -44,6 +44,7 @@ type Msg = WidthUpdated String | HeightUpdated String | Initialize
     | NewGame
     | ClearMarks
     | ShowHelp
+    | ToggleModeChangedTo ToggleMode
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model = case (model, msg) of
@@ -59,6 +60,7 @@ update msg model = case (model, msg) of
     (Playing game, Redo) -> (Playing (Game.redo game), Cmd.none)
     (Playing game, ClearMarks) -> (Playing (Game.clearMarks game), Cmd.none)
     (Playing game, ShowHelp) -> (Playing (Game.setHelp game), Cmd.none)
+    (Playing game, ToggleModeChangedTo toggleMode) -> (Playing (Game.changeToggleMode game toggleMode), Cmd.none)
     (_, NewGame) -> (Initialization { width = Nothing, height = Nothing , message = ""}, Cmd.none)
     _ -> (model, Cmd.none)
 
@@ -118,19 +120,58 @@ view model = case model of
         , button [ onClick Play ] [ text "play" ]
         , button [ onClick NewGame ] [ text "new game" ]
         ]
-    Playing game -> div []
-        [ button [ onClick Undo ] [ text "undo" ]
-        , button [ onClick Redo ] [ text "redo" ]
-        , gridView cellToggler game
-        , button [ onClick NewGame ] [ text "new game" ]
-        , button [ onClick ClearMarks ] [ text "clear" ]
-        , button [ onClick ShowHelp ] [ text "help" ]
-        ]
+    Playing game -> playingScreen game
     GameOver game -> div []
         [ text "Congratulations"
         , gridView cellViewer game
         , button [ onClick NewGame ] [ text "moar" ]
         ]
+
+playingScreen : Game -> Html Msg
+playingScreen game =
+    let
+        radio: String -> (String -> Msg) -> Bool -> List (Html Msg)
+        radio label command isChecked =
+              [ input [ type_ "radio", onInput command, checked isChecked ] [ text label ]
+              , text label
+              ]
+        isToggling : Game -> Bool
+        isToggling g = case g.toggleMode of
+            Toggling -> True
+            _ -> False
+        isMarking : Game -> Bool
+        isMarking g = case g.toggleMode of
+            Marking -> True
+            _ -> False
+        isUnmarking : Game -> Bool
+        isUnmarking g = case g.toggleMode of
+            Unmarking -> True
+            _ -> False
+        isFilling : Game -> Bool
+        isFilling g = case g.toggleMode of
+            Filling -> True
+            _ -> False
+    in
+        div []
+          [ div []
+            [ button [ onClick Undo ] [ text "undo" ]
+            , button [ onClick Redo ] [ text "redo" ]
+            ]
+          , div[]
+            (  radio "toggle" (\_ -> ToggleModeChangedTo Toggling) (isToggling game)
+            ++ radio "mark" (\_ -> ToggleModeChangedTo Marking) (isMarking game)
+            ++ radio "unmark" (\_ -> ToggleModeChangedTo Unmarking) (isUnmarking game)
+            ++ radio "fill" (\_ -> ToggleModeChangedTo Filling) (isFilling game)
+            )
+          , div []
+            [ gridView cellMarker game
+            ]
+          , div []
+            [ button [ onClick NewGame ] [ text "new game" ]
+            , button [ onClick ClearMarks ] [ text "clear" ]
+            , button [ onClick ShowHelp ] [ text "help" ]
+            ]
+          ]
 
 sizeToString : (Maybe Int) -> String
 sizeToString size =
@@ -155,8 +196,8 @@ gridView cellRenderer game = div []
 renderRow : (Int -> Int -> Cell -> Html Msg) -> Int -> Row Cell -> Html Msg
 renderRow cellRenderer y row = tr [] (indexedCellsMap (cellRenderer y) row)
 
-cellToggler : Int -> Int -> Cell -> Html Msg
-cellToggler y x cell  =
+cellMarker : Int -> Int -> Cell -> Html Msg
+cellMarker y x cell  =
     td (
         [ onClick (Toggle {x = x, y = y})
         , style "border" "1px solid black"

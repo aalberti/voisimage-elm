@@ -7,6 +7,7 @@ type alias Game =
     { grid: Grid Cell
     , toUndo: Stack GameRef
     , toRedo: Stack GameRef
+    , toggleMode: ToggleMode
     }
 type GameRef = GameRef Game
 
@@ -19,12 +20,14 @@ type alias Cell =
     , help: Help
     }
 type alias GridSize = { width: Int, height: Int }
+type ToggleMode = Toggling | Marking | Unmarking | Filling
 
 fromSize: GridSize -> Game
 fromSize {width, height} =
     { grid = Grid.from(List.repeat height (List.repeat width { state = Unknown, hint = NoHint, help = NoHelp }))
     , toUndo = Stack.empty
     , toRedo = Stack.empty
+    , toggleMode = Toggling
     }
 
 undo : Game -> Game
@@ -154,3 +157,6 @@ setHelp game =
         , toUndo = Stack.push game.toUndo (GameRef game)
         , toRedo = Stack.empty
         }
+
+changeToggleMode : Game -> ToggleMode -> Game
+changeToggleMode game toggleMode = { game | toggleMode = toggleMode}
