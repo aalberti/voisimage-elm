@@ -54,9 +54,11 @@ toggle game coordinates =
             Unknown -> markCell cell
             Marked -> unmarkCell cell
             Unmarked -> clearCell cell
+
+        clearGridHelp: Grid Cell -> Grid Cell
+        clearGridHelp grid = Grid.replaceAll (\c -> {c|help = NoHelp}) grid
     in
-        updateGrid game (Grid.update toggleCell game.grid coordinates)
-            |> clearHelp
+        updateGrid game (Grid.update toggleCell game.grid coordinates |> clearGridHelp)
 
 updateHint : Game -> Coordinates -> String -> Game
 updateHint game coordinates hint =
@@ -152,11 +154,3 @@ setHelp game =
         , toUndo = Stack.push game.toUndo (GameRef game)
         , toRedo = Stack.empty
         }
-
-clearHelp : Game -> Game
-clearHelp game =
-    { game
-    | grid = Grid.replaceAll (\c -> {c|help = NoHelp}) game.grid
-    , toUndo = Stack.push game.toUndo (GameRef game)
-    , toRedo = Stack.empty
-    }
