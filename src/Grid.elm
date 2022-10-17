@@ -155,18 +155,10 @@ replaceNeighbours mapper grid coordinates =
     let
         isNeighbour : Coordinates -> Coordinates -> Bool
         isNeighbour center cell =
-            cell.x
-                >= center.x
-                - 1
-                && cell.x
-                <= center.x
-                + 1
-                && cell.y
-                >= center.y
-                - 1
-                && cell.y
-                <= center.y
-                + 1
+            (cell.x >= center.x - 1)
+                && (cell.x <= center.x + 1)
+                && (cell.y >= center.y - 1)
+                && (cell.y <= center.y + 1)
 
         mapperForNeighbours : (a -> a) -> Coordinates -> (Coordinates -> a -> a)
         mapperForNeighbours m center =

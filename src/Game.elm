@@ -217,6 +217,11 @@ numberOfUnknownNeighbours grid coordinates =
         |> Grid.count isCellUnknown
 
 
+numberOfNeighbours : Grid Cell -> Coordinates -> Int
+numberOfNeighbours grid coordinates =
+    Grid.neighbours grid coordinates |> Grid.count (\_ -> True)
+
+
 updateGrid : Game -> Grid Cell -> Game
 updateGrid game grid =
     { game
@@ -257,6 +262,15 @@ fill grid coordinates =
 
                 _ ->
                     cell
+
+        markKnown : Cell -> Cell
+        markKnown cell =
+            case cell.state of
+                Unknown ->
+                    { cell | state = Unmarked }
+
+                _ ->
+                    cell
     in
     case cellHint grid coordinates of
         NoHint ->
@@ -265,6 +279,9 @@ fill grid coordinates =
         CellsToMark cellsToMark ->
             if cellsToMark == numberOfUnknownNeighbours grid coordinates + numberOfMarkedNeighbours grid coordinates then
                 Grid.replaceNeighbours markUnknown grid coordinates
+
+            else if cellsToMark == numberOfNeighbours grid coordinates - numberOfUnmarkedNeighbours grid coordinates - numberOfUnknownNeighbours grid coordinates then
+                Grid.replaceNeighbours markKnown grid coordinates
 
             else
                 grid
@@ -278,7 +295,7 @@ setHelp game =
             cellsToMark
                 < numberOfMarkedNeighbours grid coordinates
                 || cellsToMark
-                > (Grid.neighbours grid coordinates |> Grid.count (\_ -> True))
+                > numberOfNeighbours grid coordinates
                 - numberOfUnmarkedNeighbours grid coordinates
 
         setCellHelp : Grid Cell -> Coordinates -> Cell -> Cell
