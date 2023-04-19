@@ -1,0 +1,4 @@
+- in intellij, add elm plugin (it spits incompatibility errors, but it somehow works)
+- Install elm compiler, add it to elm plugin's configuration
+- Run `elm make src/Main.elm --output main.js` (or `elm make src\Main.elm --output main.js` on windows)
+- Run index.html in intellij (it spawns an http server to make the browser work)
