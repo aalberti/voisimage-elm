@@ -43,9 +43,8 @@ encode g =
                 CellsToMark number isSure ->
                     Encode.object
                         [ ( "value", String.fromInt number |> Encode.string )
-                        , ( "isSure",  Encode.bool isSure)
+                        , ( "isSure", Encode.bool isSure )
                         ]
-
     in
     Array.toList g |> Encode.list encodeRow
 
@@ -92,15 +91,15 @@ decodeFromString encoded =
         hint : Decode.Decoder Hint
         hint =
             Decode.oneOf
-            [ Decode.string |> Decode.andThen ( \_ -> Decode.succeed NoHint)
-            , Decode.map2 CellsToMark
-                  (Decode.field "value" Decode.string |> Decode.andThen hintValue)
-                  (Decode.field "isSure" Decode.bool)
-            ]
+                [ Decode.string |> Decode.andThen (\_ -> Decode.succeed NoHint)
+                , Decode.map2 CellsToMark
+                    (Decode.field "value" Decode.string |> Decode.andThen hintValue)
+                    (Decode.field "isSure" Decode.bool)
+                ]
 
         hintValue : String -> Decode.Decoder Int
-        hintValue t = Decode.succeed (String.toInt t |> Maybe.withDefault 0)
-
+        hintValue t =
+            Decode.succeed (String.toInt t |> Maybe.withDefault 0)
     in
     case Decode.decodeString grid encoded of
         Ok value ->

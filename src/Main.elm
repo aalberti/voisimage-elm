@@ -379,6 +379,7 @@ hintEditor y x cell =
              , style "border" "none"
              ]
                 ++ styles cell
+                ++ editionStyles cell
             )
             []
         ]
@@ -415,3 +416,13 @@ styles cell =
                 _ ->
                     []
            )
+
+
+editionStyles : Cell -> List (Attribute msg)
+editionStyles cell =
+    case cell.hint of
+        CellsToMark _ False ->
+            [ style "color" "red" ]
+
+        _ ->
+            []
