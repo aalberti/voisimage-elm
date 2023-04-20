@@ -33,7 +33,10 @@ encode g =
         Array.toList g |> Encode.list encodeRow
 
 decode : Encode.Value -> Result Error (Grid Cell)
-decode encoded =
+decode encoded = decodeFromString ( Encode.encode 0 encoded )
+
+decodeFromString : String -> Result Error (Grid Cell)
+decodeFromString encoded =
     let
         grid : Decode.Decoder (List (List Cell))
         grid = Decode.list row
@@ -64,6 +67,6 @@ decode encoded =
             "" -> Decode.succeed NoHint
             _ -> Decode.succeed (String.toInt t |> Maybe.map CellsToMark |> Maybe.withDefault NoHint)
     in
-        case Decode.decodeValue grid encoded of
+        case Decode.decodeString grid encoded of
             Ok value -> Grid.from value |> Ok
             Err error -> Err error

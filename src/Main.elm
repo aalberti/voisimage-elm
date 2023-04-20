@@ -1,14 +1,14 @@
 port module Main exposing (..)
 
 import Browser
-import Codec exposing (decode, encode)
+import Codec exposing (decode, decodeFromString, encode)
 import Game exposing (Cell, Game, Hint(..), State(..), ToggleMode(..))
 import Grid exposing (Coordinates, Grid, Row, indexedCellsMap)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Json.Decode as Decode exposing (Error)
-import Json.Encode as Encode exposing (Value)
+import Json.Encode exposing (Value)
 import Stack
 
 
@@ -135,7 +135,7 @@ initializeGame params =
             ( Editing (Game.fromSize { width = orZero params.width, height = orZero params.height }), Cmd.none )
 
         _ ->
-            case decode (Encode.string params.json) of
+            case decodeFromString params.json of
                 Ok g ->
                     ( Editing { grid = g, toggleMode = Toggling, toUndo = Stack.empty, toRedo = Stack.empty }, Cmd.none )
 
