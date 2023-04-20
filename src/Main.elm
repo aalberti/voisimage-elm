@@ -8,7 +8,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Json.Decode as Decode exposing (Error)
-import Json.Encode exposing (Value)
+import Json.Encode as Encode exposing (Value)
 import Stack
 
 -- MAIN
@@ -22,7 +22,14 @@ main = Browser.element
 
 -- MODEL
 
-type Model = Initialization { width: Maybe Int, height: Maybe Int, message: String }
+type alias InitializationParameters =
+    { width: Maybe Int
+    , height: Maybe Int
+    , json: String
+    , message: String
+    }
+
+type Model = Initialization InitializationParameters
     | Editing Game
     | Playing Game
     | GameOver Game
@@ -31,13 +38,13 @@ init : Value -> (Model, Cmd Msg)
 init flags =
     ( case (decode flags) of
         Ok g -> Editing {grid = g, toggleMode = Toggling, toUndo = Stack.empty, toRedo = Stack.empty}
-        Err error -> (Initialization { width = Nothing, height = Nothing, message = Decode.errorToString error })
+        Err error -> (Initialization { width = Nothing, height = Nothing, json = "", message = Decode.errorToString error })
     , Cmd.none
     )
 
 -- UPDATE
 
-type Msg = WidthUpdated String | HeightUpdated String | Initialize
+type Msg = WidthUpdated String | HeightUpdated String | JsonUpdated String | Initialize
     | Undo | Redo
     | HintUpdated Coordinates String | Play
     | Toggle Coordinates
@@ -48,9 +55,10 @@ type Msg = WidthUpdated String | HeightUpdated String | Initialize
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model = case (model, msg) of
-    (Initialization size, WidthUpdated width) -> (Initialization { size | width = String.toInt width }, Cmd.none)
-    (Initialization size, HeightUpdated height) -> (Initialization { size | height = String.toInt height }, Cmd.none)
-    (Initialization size, Initialize) -> (Editing (Game.fromSize {width = orZero size.width, height = orZero size.height}), Cmd.none)
+    (Initialization params, WidthUpdated width) -> (Initialization { params | width = String.toInt width }, Cmd.none)
+    (Initialization params, HeightUpdated height) -> (Initialization { params | height = String.toInt height }, Cmd.none)
+    (Initialization params, JsonUpdated json) -> (Initialization { params | json = json }, Cmd.none)
+    (Initialization params, Initialize) -> initializeGame params
     (Editing game, HintUpdated coordinates hint) -> (Editing (Game.updateHint game coordinates hint), Cmd.none)
     (Editing game, Undo) -> (Editing (Game.undo game), Cmd.none)
     (Editing game, Redo) -> (Editing (Game.redo game), Cmd.none)
@@ -61,8 +69,16 @@ update msg model = case (model, msg) of
     (Playing game, ClearMarks) -> (Playing (Game.clearMarks game), Cmd.none)
     (Playing game, ShowHelp) -> (Playing (Game.setHelp game), Cmd.none)
     (Playing game, ToggleModeChangedTo toggleMode) -> (Playing (Game.changeToggleMode game toggleMode), Cmd.none)
-    (_, NewGame) -> (Initialization { width = Nothing, height = Nothing , message = ""}, Cmd.none)
+    (_, NewGame) -> (Initialization { width = Nothing, height = Nothing , json = "", message = ""}, Cmd.none)
     _ -> (model, Cmd.none)
+
+initializeGame : InitializationParameters -> (Model, Cmd Msg)
+initializeGame params =
+    case params.json of
+        "" -> (Editing ( Game.fromSize { width = orZero params.width, height = orZero params.height }), Cmd.none)
+        _ -> case (decode (Encode.string params.json )) of
+            Ok g -> (Editing { grid = g, toggleMode = Toggling, toUndo = Stack.empty, toRedo = Stack.empty }, Cmd.none)
+            Err error -> (Initialization { params | message = Decode.errorToString error }, Cmd.none)
 
 gameOverOr : Game -> (Model, Cmd msg)
 gameOverOr game =
@@ -105,13 +121,21 @@ updateWithStorage msg oldModel =
 
 view : Model -> Html Msg
 view model = case model of
-    Initialization { width, height, message } -> div []
-        [ text "Width"
-        , input [ type_ "number", placeholder "width", value (sizeToString width), onInput WidthUpdated ][]
-        , text "Height"
-        , input [ type_ "number", placeholder "height", value (sizeToString height), onInput HeightUpdated ][]
-        , button [ onClick Initialize ] [ text "Initialize" ]
-        , text message
+    Initialization { width, height, json, message } -> div []
+        [ div []
+            [ text "Width"
+            , input [ type_ "number", placeholder "width", value (sizeToString width), onInput WidthUpdated ][]
+            , text "Height"
+            , input [ type_ "number", placeholder "height", value (sizeToString height), onInput HeightUpdated ][]
+            ]
+        , div []
+            [ text "or"
+            , textarea [ cols 40, rows 10, placeholder "json here", value json, onInput JsonUpdated ] []
+           ]
+        , div []
+            [ button [ onClick Initialize ] [ text "Initialize" ]
+            , text message
+            ]
         ]
     Editing game ->  div []
         [ button [ onClick Undo ] [ text "undo" ]
