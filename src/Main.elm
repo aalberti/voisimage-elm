@@ -390,7 +390,7 @@ cellToString cell =
         NoHint ->
             ""
 
-        CellsToMark number ->
+        CellsToMark number _ ->
             String.fromInt number
 
 

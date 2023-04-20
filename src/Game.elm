@@ -18,7 +18,7 @@ type GameRef
 
 type Hint
     = NoHint
-    | CellsToMark Int
+    | CellsToMark Int Bool
 
 
 type State
@@ -132,7 +132,7 @@ updateHint game coordinates hint =
             { cell
                 | hint =
                     String.toInt h
-                        |> Maybe.map CellsToMark
+                        |> Maybe.map (\value -> (CellsToMark value True))
                         |> Maybe.withDefault NoHint
             }
     in
@@ -148,7 +148,7 @@ isOver game =
                 NoHint ->
                     False
 
-                CellsToMark cellsToMark ->
+                CellsToMark cellsToMark _->
                     numberOfMarkedNeighbours grid coordinates /= cellsToMark
     in
     case Grid.count isUnknown game.grid of
@@ -276,7 +276,7 @@ fill grid coordinates =
         NoHint ->
             grid
 
-        CellsToMark cellsToMark ->
+        CellsToMark cellsToMark _ ->
             if cellsToMark == numberOfUnknownNeighbours grid coordinates + numberOfMarkedNeighbours grid coordinates then
                 Grid.replaceNeighbours markUnknown grid coordinates
 
@@ -304,7 +304,7 @@ setHelp game =
                 NoHint ->
                     { cell | help = NoHelp }
 
-                CellsToMark cellsToMark ->
+                CellsToMark cellsToMark _ ->
                     if isInError grid coordinates cellsToMark then
                         { cell | help = Error }
 
